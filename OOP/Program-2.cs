@@ -1,4 +1,5 @@
-﻿public abstract class Home
+//will be updated
+public abstract class Home
 {
     public double price { get; set; }
     public string location { get; set; }
