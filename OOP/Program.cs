@@ -1,68 +1,156 @@
-﻿public class Car
+﻿namespace System.Collections.Generic;
+using System;
+public interface IProcessManager
 {
-    public string model { get; set; }
-    public int passengers { get; set; }
-    public string color { get; set; }
-    private float _speed;
-    public float speed
+    public int GetUsedMemorySize();
+    public void AddProcess(User u, string processname, int required_memory);
+    public void RemoveProcess(string name);
+    public void PrintProcesses();
+    public void PrintWaitingProcesses();
+}
+public class ProcessManager : IProcessManager
+{
+    int used_memory_size = 0;
+    int max_memory_size;
+    Dictionary<string, Process> processMaps = new Dictionary<string, Process>();
+    LinkedList<Process> waitingProcessList = new LinkedList<Process>();
+
+    public ProcessManager(int max_memory_size)
     {
-        get
-        {
-            return _speed;
-        }
-        set
-        {
-            if (value > 250 || value < 2)
-            {
-                Console.WriteLine("Hatalı bir hız değeri girdiniz. Hız değeri 2 ile 250 arası değer alır.");
-            }
-            else
-            {
-                _speed = value;
-            }
-        }
-    }
-    public Car(string model, int passengers, string color, float speed)
-    {
-        this.model = model;
-        this.passengers = passengers;
-        this.color = color;
-        this.speed = speed;
+        this.max_memory_size = max_memory_size;
     }
 
-    public bool ComparePassengers(int passengers)
+    public int GetUsedMemorySize()
     {
-        return passengers < this.passengers;
+        return used_memory_size;
     }
-    public Car CompareSpeed(Car car)
+    public void AddProcess(User u, string processname, int required_memory)
     {
-        if (car.speed > this.speed)
+        // if (processMaps.ContainsKey(processname))
+        // {
+        //     throw new Exception("Process is existing!");
+        // }
+        // else
+        // {
+        Process process = new Process(processname, required_memory, u);
+        if (max_memory_size >= GetUsedMemorySize() + required_memory)
         {
-            return car;
+            processMaps.Add(processname, process);
         }
         else
         {
-            return this;
+            waitingProcessList.AddLast(process);
+        }
+        //}
+    }
+    public void RemoveProcess(string name)
+    {
+        processMaps.Remove(name);
+    }
+    public void PrintProcesses()
+    {
+        foreach (var process in processMaps)
+        {
+            Console.Write("Name: " + process.Key + "\n" + "User: " + process.Value.GetUser());
         }
     }
-
-    public string IntroduceSelf()
+    public void PrintWaitingProcesses()
     {
-        string brief = "Model: " + this.model + "#Passengers: " + this.passengers + "#Color: " + this.color + "#Speed: " + this.speed;
-        brief = brief.Replace("#", System.Environment.NewLine);
-        return brief;
+        foreach (var process in waitingProcessList)
+        {
+            Console.Write("Name: " + process.GetName());
+        }
     }
 }
-
-public class Program
+public class User
 {
-    public static void Main()
+    string name;
+    public User(string name)
     {
-        Car car1 = new Car("BMW", 2, "black", 250f);
-        Car car2 = new Car("Mitsubishi", 6, "grey", 180f);
-        Car car3 = new Car("Renault", 4, "blue", 200f);
-        Console.WriteLine(car1.speed + " " + car1.passengers);
-        Console.WriteLine(car1.ComparePassengers(car2.passengers));
-        Console.WriteLine(car2.CompareSpeed(car3).IntroduceSelf());
+        this.name = name;
+    }
+    public string GetName()
+    {
+        return this.name;
+    }
+    public string ToString()
+    {
+        return $"User Name: {GetName()}";
+    }
+}
+public class Process
+{
+    string name;
+    int required_memory;
+    User user;
+    public Process(string name, int required_memory, User user)
+    {
+        this.name = name;
+        this.required_memory = required_memory;
+        this.user = user;
+    }
+    public string GetName()
+    {
+        return this.name;
+    }
+    public int GetRequiredMemory()
+    {
+        return this.required_memory;
+    }
+    public User GetUser()
+    {
+        return user;
+    }
+    public string toString()
+    {
+        return $"Name: {GetName()}\n required memory: {GetRequiredMemory()}";
+    }
+}
+class Program
+{
+    static void Main(string[] args)
+    {
+        ProcessManager pm = new ProcessManager(10);
+        User u1 = new User("u1");
+        User u2 = new User("u2");
+        User u3 = new User("u3");
+
+        pm.AddProcess(u1, "Process1", 2);
+        pm.AddProcess(u1, "Process4", 2);
+        pm.AddProcess(u2, "Process2", 6);
+
+        pm.AddProcess(u3, "Process3", 3);
+        pm.AddProcess(u1, "Process6", 7);
+        //pm.AddProcess(u2, "Process2", 4); //ayni isimde
+        pm.AddProcess(u1, "Process5", 1);
+
+        Console.WriteLine("1-Process ----------------------------------");
+        pm.PrintProcesses();
+        Console.WriteLine("1-Waiting Process --------------------------");
+        pm.PrintWaitingProcesses();
+        try
+        {
+            pm.RemoveProcess("Process2");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        Console.WriteLine("2-Process ----------------------------------");
+        pm.PrintProcesses();
+        Console.WriteLine("2-Waiting Process --------------------------");
+        pm.PrintWaitingProcesses();
+
+        Console.WriteLine(pm.GetUsedMemorySize());
+
+        try
+        {
+            pm.RemoveProcess("OlmayanProcess");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
 }
